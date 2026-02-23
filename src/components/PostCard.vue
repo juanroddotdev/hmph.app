@@ -12,7 +12,7 @@ import {
 } from '@/lib/emojiTags'
 import { useTagOptionsStore } from '@/stores/tagOptionsStore'
 import { useGroupsStore } from '@/stores/groupsStore'
-import { useDragToGroup } from '@/composables/useDragToGroup'
+import { useLongPress } from '@/composables/useLongPress'
 
 const props = defineProps<{
   post: Post
@@ -29,28 +29,39 @@ const thoughtStore = useThoughtStore()
 const tagStore = useTagOptionsStore()
 const groupsStore = useGroupsStore()
 
-type CardState = 'normal' | 'menu' | 'editing'
+type CardState = 'normal' | 'menu' | 'groupPicker' | 'editing'
 const cardState = ref<CardState>('normal')
 
 const editContent = ref('')
+const newGroupName = ref('')
+const showAddGroup = ref(false)
 
-const {
-  isDragging,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-} = useDragToGroup(props.post.id, () => {
-  if (cardState.value === 'normal') cardState.value = 'menu'
-})
+const { start: startLongPress, stop: stopLongPress, cancel: cancelLongPress } = useLongPress(
+  () => {
+    if (cardState.value === 'normal') cardState.value = 'menu'
+  },
+  { duration: 400 }
+)
 
-function handlePointerDown(e: PointerEvent) {
-  onPointerDown(e)
-  ;(e.currentTarget as HTMLElement)?.setPointerCapture?.(e.pointerId)
+function assignToGroup(groupName: string) {
+  groupsStore.assignPostToGroup(props.post.id, groupName)
+  cardState.value = 'normal'
 }
 
-function handlePointerUp(e: PointerEvent) {
-  onPointerUp()
-  ;(e.currentTarget as HTMLElement)?.releasePointerCapture?.(e.pointerId)
+function openGroupPicker() {
+  cardState.value = 'groupPicker'
+  showAddGroup.value = false
+  newGroupName.value = ''
+}
+
+function addGroupAndAssign() {
+  const name = newGroupName.value.trim().toLowerCase()
+  if (!name) return
+  const ok = groupsStore.addGroup(name)
+  if (ok) {
+    groupsStore.assignPostToGroup(props.post.id, name)
+    cardState.value = 'normal'
+  }
 }
 
 function openEdit() {
@@ -64,6 +75,10 @@ function cancelEdit() {
 
 function closeMenu() {
   cardState.value = 'normal'
+}
+
+function backFromGroupPicker() {
+  cardState.value = 'menu'
 }
 
 async function saveEdit() {
@@ -122,16 +137,15 @@ const displayTime = computed(() =>
 
 <template>
   <article
-    class="relative touch-pan-y overflow-hidden rounded-xl border border-slate-600/60 bg-slate-800/60 transition-all duration-300 hover:border-slate-500"
+    class="relative overflow-hidden rounded-xl border border-slate-600/60 bg-slate-800/60 transition-all duration-300 hover:border-slate-500"
     :class="{
       'scale-[1.02] shadow-lg shadow-slate-900/50 ring-2 ring-amber-500/30':
-        cardState === 'menu' || cardState === 'editing',
-      'opacity-60': isDragging,
+        cardState === 'menu' || cardState === 'groupPicker' || cardState === 'editing',
     }"
-    @pointerdown="handlePointerDown"
-    @pointermove="onPointerMove"
-    @pointerup="handlePointerUp"
-    @pointercancel="handlePointerUp"
+    @pointerdown="startLongPress"
+    @pointerup="stopLongPress"
+    @pointerleave="stopLongPress"
+    @pointercancel="cancelLongPress"
   >
     <!-- Normal view -->
     <div v-if="cardState === 'normal'" class="relative p-4">
@@ -184,24 +198,30 @@ const displayTime = computed(() =>
       </footer>
     </div>
 
-    <!-- Menu view: Edit | Delete -->
+    <!-- Menu view: Edit | Delete | Group -->
     <div
       v-else-if="cardState === 'menu'"
       class="flex flex-col gap-4 p-6"
     >
       <p class="whitespace-pre-wrap text-slate-100" v-html="renderedContent" />
-      <div class="flex gap-3">
+      <div class="flex flex-col gap-2">
         <button
-          class="flex-1 rounded-xl bg-amber-500/20 py-3 font-medium text-amber-400 transition hover:bg-amber-500/30"
+          class="rounded-xl bg-amber-500/20 py-3 font-medium text-amber-400 transition hover:bg-amber-500/30"
           @click="openEdit"
         >
           Edit
         </button>
         <button
-          class="flex-1 rounded-xl bg-red-900/30 py-3 font-medium text-red-400 transition hover:bg-red-900/50"
+          class="rounded-xl bg-red-900/30 py-3 font-medium text-red-400 transition hover:bg-red-900/50"
           @click="handleDelete"
         >
           Delete
+        </button>
+        <button
+          class="rounded-xl bg-slate-700/60 py-3 font-medium text-slate-300 transition hover:bg-slate-600/60"
+          @click="openGroupPicker"
+        >
+          Group
         </button>
       </div>
       <button
@@ -209,6 +229,59 @@ const displayTime = computed(() =>
         @click="closeMenu"
       >
         Cancel
+      </button>
+    </div>
+
+    <!-- Group picker: choose group -->
+    <div
+      v-else-if="cardState === 'groupPicker'"
+      class="flex flex-col gap-4 p-6"
+    >
+      <p class="whitespace-pre-wrap text-slate-100" v-html="renderedContent" />
+      <p class="text-sm text-slate-500">Assign to group:</p>
+      <div class="flex flex-col gap-2">
+        <button
+          v-for="group in groupsStore.groups"
+          :key="group"
+          class="rounded-xl border border-slate-600 bg-slate-800/60 py-3 font-medium text-slate-200 transition hover:border-amber-500/50 hover:bg-slate-700/60"
+          @click="assignToGroup(group)"
+        >
+          {{ group }}
+        </button>
+        <div v-if="showAddGroup" class="flex gap-2">
+          <input
+            v-model="newGroupName"
+            type="text"
+            placeholder="New group name"
+            class="flex-1 rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-slate-200"
+            @keyup.enter="addGroupAndAssign"
+          />
+          <button
+            class="rounded-xl bg-amber-500/20 px-4 py-2 font-medium text-amber-400"
+            @click="addGroupAndAssign"
+          >
+            Add
+          </button>
+          <button
+            class="rounded-xl border border-slate-600 px-4 py-2 text-slate-400"
+            @click="showAddGroup = false; newGroupName = ''"
+          >
+            Cancel
+          </button>
+        </div>
+        <button
+          v-else
+          class="rounded-xl border border-dashed border-slate-600 py-3 text-slate-500 transition hover:border-amber-500/50 hover:text-amber-400"
+          @click="showAddGroup = true"
+        >
+          + New group
+        </button>
+      </div>
+      <button
+        class="text-sm text-slate-500 hover:text-slate-300"
+        @click="backFromGroupPicker"
+      >
+        Back
       </button>
     </div>
 
