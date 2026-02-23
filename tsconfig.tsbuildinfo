@@ -1,0 +1,1 @@
+{"root":["./src/main.ts","./src/vite-env.d.ts","./src/lib/supabase.ts","./src/plugins/capacitor.ts","./src/stores/thoughtstore.ts","./src/app.vue","./src/components/captureinput.vue","./src/components/postcard.vue","./src/components/weeklyreview.vue","./src/views/feedview.vue","./src/views/reviewview.vue"],"version":"5.6.3"}
