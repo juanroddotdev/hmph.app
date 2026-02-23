@@ -4,8 +4,6 @@ import { PenLine, ListTodo, LogOut, Settings } from 'lucide-vue-next'
 import FeedView from '@/views/FeedView.vue'
 import ReviewView from '@/views/ReviewView.vue'
 import SettingsView from '@/views/SettingsView.vue'
-import SlideNav from '@/components/SlideNav.vue'
-import SlideNavTrigger from '@/components/SlideNavTrigger.vue'
 import { useAuthStore } from '@/stores/authStore'
 
 const auth = useAuthStore()
@@ -14,8 +12,6 @@ const activeTab = ref<'feed' | 'review' | 'settings'>('feed')
 
 <template>
   <div class="min-h-screen bg-slate-900 pb-[env(safe-area-inset-bottom)]">
-    <SlideNav />
-    <SlideNavTrigger />
     <header class="sticky top-0 z-10 border-b border-slate-700/80 bg-slate-900/95 backdrop-blur">
       <div class="mx-auto flex max-w-md items-center justify-between px-4 py-3">
         <h1 class="text-xl font-bold text-amber-400">HMPF</h1>
