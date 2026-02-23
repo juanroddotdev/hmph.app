@@ -5,13 +5,6 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-/** Ensure we have a session (anonymous auth for zero-friction MVP) */
-export async function ensureSession() {
-  const { data: { session } } = await supabase.auth.getSession()
-  if (session) return
-  await supabase.auth.signInAnonymously()
-}
-
 // Database types
 export type PostStatus = 'active' | 'done'
 export type PostVisibility = 'private' | 'friends' | 'public'

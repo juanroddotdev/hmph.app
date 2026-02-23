@@ -130,7 +130,58 @@ export const useThoughtStore = defineStore('thought', () => {
     await updatePostStatus(id, 'done', true)
   }
 
-  async function pushToNextWeek(id: string) {
+  async function updatePost(id: string, content: string): Promise<boolean> {
+  const idx = posts.value.findIndex((p) => p.id === id)
+  if (idx === -1) return false
+
+  const prev = posts.value[idx]
+  const trimmed = content.trim()
+  posts.value[idx] = { ...prev, content: trimmed }
+
+  try {
+    const { error: err } = await supabase
+      .from('posts')
+      .update({ content: trimmed })
+      .eq('id', id)
+
+    if (err) throw err
+
+    try {
+      await Haptics.impact({ style: ImpactStyle.Light })
+    } catch {}
+
+    return true
+  } catch (e) {
+    posts.value[idx] = prev
+    error.value = e instanceof Error ? e.message : 'Failed to update'
+    return false
+  }
+}
+
+async function deletePost(id: string): Promise<boolean> {
+  const idx = posts.value.findIndex((p) => p.id === id)
+  if (idx === -1) return false
+
+  const [removed] = posts.value.splice(idx, 1)
+
+  try {
+    const { error: err } = await supabase.from('posts').delete().eq('id', id)
+
+    if (err) throw err
+
+    try {
+      await Haptics.impact({ style: ImpactStyle.Medium })
+    } catch {}
+
+    return true
+  } catch (e) {
+    posts.value.splice(idx, 0, removed)
+    error.value = e instanceof Error ? e.message : 'Failed to delete'
+    return false
+  }
+}
+
+async function pushToNextWeek(id: string) {
     const nextMonday = new Date(getMondayOfCurrentWeek())
     nextMonday.setDate(nextMonday.getDate() + 7)
 
@@ -174,6 +225,8 @@ export const useThoughtStore = defineStore('thought', () => {
     error,
     fetchPosts,
     addPost,
+    updatePost,
+    deletePost,
     updatePostStatus,
     markAsProcessed,
     markAsDone,
