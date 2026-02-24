@@ -1,0 +1,40 @@
+{
+  "hash": "44a43f52",
+  "configHash": "3b0d7a4f",
+  "lockfileHash": "eb522bc1",
+  "browserHash": "fea89148",
+  "optimized": {
+    "vue": {
+      "src": "../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
+      "file": "vue.js",
+      "fileHash": "f8ed3b4d",
+      "needsInterop": false
+    },
+    "pinia": {
+      "src": "../../node_modules/pinia/dist/pinia.mjs",
+      "file": "pinia.js",
+      "fileHash": "9157eb7d",
+      "needsInterop": false
+    },
+    "@capacitor/core": {
+      "src": "../../node_modules/@capacitor/core/dist/index.js",
+      "file": "@capacitor_core.js",
+      "fileHash": "630aa6c4",
+      "needsInterop": false
+    },
+    "@capacitor/keyboard": {
+      "src": "../../node_modules/@capacitor/keyboard/dist/esm/index.js",
+      "file": "@capacitor_keyboard.js",
+      "fileHash": "6da11d51",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-73HNARDV": {
+      "file": "chunk-73HNARDV.js"
+    },
+    "chunk-GOMI2GI5": {
+      "file": "chunk-GOMI2GI5.js"
+    }
+  }
+}
