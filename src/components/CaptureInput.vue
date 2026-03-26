@@ -67,7 +67,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="rounded-xl border border-slate-600/60 bg-slate-800/60 p-4 transition">
+  <div id="capture-composer" class="ui-block capture-block bg-slate-800/60 p-4 transition">
     <textarea
       ref="inputRef"
       v-model="model"
@@ -121,7 +121,7 @@ onMounted(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
         @click.self="showAddTag = false"
       >
-        <div class="w-full max-w-sm rounded-xl border border-slate-600 bg-slate-800 p-4">
+        <div class="ui-block dialog-panel-block w-full max-w-sm bg-slate-800 p-4">
           <h3 class="mb-3 font-medium text-slate-200">Add custom tag</h3>
           <div class="space-y-3">
             <input

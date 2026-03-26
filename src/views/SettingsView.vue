@@ -24,7 +24,7 @@ const options: { value: TimeFormat; label: string }[] = [
         <label
           v-for="opt in options"
           :key="opt.value"
-          class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-600/60 bg-slate-800/60 px-4 py-3 transition hover:border-slate-500"
+          class="ui-block settings-option-block flex cursor-pointer items-center gap-3 bg-slate-800/60 px-4 py-3 transition hover:border-slate-500"
         >
           <input
             v-model="settings.timeFormat"

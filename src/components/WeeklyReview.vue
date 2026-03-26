@@ -15,7 +15,7 @@ const store = useThoughtStore()
     <p class="text-sm text-slate-400">
       Items below are unprocessed. Mark as Done or Push to next week.
     </p>
-    <div v-if="store.unprocessedPosts.length === 0" class="rounded-xl border border-slate-600/60 bg-slate-800/40 p-8 text-center text-slate-500">
+    <div v-if="store.unprocessedPosts.length === 0" class="ui-block review-empty-block bg-slate-800/40 p-8 text-center text-slate-500">
       All clear. Nothing to triage.
     </div>
     <div v-else class="flex flex-col gap-3">
