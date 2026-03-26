@@ -10,3 +10,9 @@
     @apply bg-slate-900 text-slate-100;
   }
 }
+
+@layer components {
+  .ui-block {
+    @apply rounded-xl border border-slate-600/60;
+  }
+}

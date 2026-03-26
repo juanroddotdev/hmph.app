@@ -137,7 +137,7 @@ const displayTime = computed(() =>
 
 <template>
   <article
-    class="relative overflow-hidden rounded-xl border border-slate-600/60 bg-slate-800/60 transition-all duration-300 hover:border-slate-500"
+    class="ui-block post-block relative overflow-hidden bg-slate-800/60 transition-all duration-300 hover:border-slate-500"
     :class="{
       'scale-[1.02] shadow-lg shadow-slate-900/50 ring-2 ring-amber-500/30':
         cardState === 'menu' || cardState === 'groupPicker' || cardState === 'editing',
