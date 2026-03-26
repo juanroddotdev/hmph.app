@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useSettingsStore, type TimeFormat } from '@/stores/settingsStore'
 import { useTagOptionsStore } from '@/stores/tagOptionsStore'
 import { MOOD_EMOJIS } from '@/lib/emojiTags'
 
@@ -9,15 +8,8 @@ const emit = defineEmits<{
   submit: [content: string]
 }>()
 
-const settings = useSettingsStore()
 const tagStore = useTagOptionsStore()
 const inputRef = ref<HTMLTextAreaElement | null>(null)
-
-const timeOptions: { value: TimeFormat; label: string }[] = [
-  { value: '12hr', label: '12hr' },
-  { value: 'military', label: '24hr' },
-  { value: 'friendly', label: 'Time of day' },
-]
 
 const showAddTag = ref(false)
 const newTagEmoji = ref('')
@@ -86,26 +78,6 @@ onMounted(() => {
     />
 
     <div class="flex flex-col gap-2 border-t border-slate-600/60 pt-3">
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs text-slate-500">Time:</span>
-        <div class="flex gap-1">
-          <button
-            v-for="opt in timeOptions"
-            :key="opt.value"
-            type="button"
-            :class="[
-              'rounded-lg px-2 py-1 text-xs transition',
-              settings.timeFormat === opt.value
-                ? 'bg-amber-500/20 text-amber-400'
-                : 'text-slate-500 hover:bg-slate-700 hover:text-slate-300'
-            ]"
-            @click="settings.timeFormat = opt.value"
-          >
-            {{ opt.label }}
-          </button>
-        </div>
-      </div>
-
       <div class="flex flex-wrap gap-1">
         <span class="text-xs text-slate-500 self-center">Mood:</span>
         <button
