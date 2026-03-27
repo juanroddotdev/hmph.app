@@ -71,6 +71,35 @@ function buildTagToHashtag(opts: { emoji: string; tag: string }[]): Record<strin
   return r
 }
 
+export const MOOD_ALIASES: Record<string, string> = {
+  happy: '😊', mad: '😤', chill: '😌', tired: '😩',
+  hyped: '🙌', thinking: '🤔', sleepy: '😴', awkward: '😅',
+  party: '🎉', sigh: '😮‍💨', good: '👍', yikes: '😬',
+}
+
+/**
+ * Replace `/tag` with emoji + #hashtag, and `:mood` with the mood emoji.
+ * Runs once on submit so stored content matches tap-button output.
+ */
+export function resolveShortcuts(
+  text: string,
+  tagOptions: TagOption[] = DEFAULT_TAG_OPTIONS
+): string {
+  let result = text
+
+  for (const opt of tagOptions) {
+    const pattern = new RegExp(`/${escapeRegex(opt.tag)}(?=\\s|$)`, 'gi')
+    result = result.replace(pattern, `${opt.emoji} #${opt.tag}`)
+  }
+
+  for (const [alias, emoji] of Object.entries(MOOD_ALIASES)) {
+    const pattern = new RegExp(`:${escapeRegex(alias)}(?=\\s|$)`, 'gi')
+    result = result.replace(pattern, emoji)
+  }
+
+  return result
+}
+
 /** Strip tag and mood emojis (and their #hashtags) from content for display. Pass tagOptions to include custom tags. */
 export function stripTagAndMoodForDisplay(
   content: string,

@@ -42,6 +42,21 @@ Prioritized recommendations based on impact and effort.
 
 12. **Capacitor native builds** — Ship to App Store / Play Store. Verify haptics, keyboard behavior, safe areas.
 
+### Mobile UX — starter checklist
+
+Running list of dimensions to improve for phone and Capacitor users (add specifics as you discover them). Complements the numbered items above: those are features; this is a UX audit lens.
+
+- **Thumb reach** — FAB, sheet height, primary actions at bottom, safe-area padding
+- **Touch targets** — Min size / spacing for tags, moods, close, long-press affordances
+- **Keyboard** — Sheet vs keyboard overlap, focus, Enter / Shift+Enter discoverability
+- **Gestures** — Swipe on trigger, scroll vs sheet drag, accidental dismiss
+- **Performance** — Feed scroll, list length, cold start on device
+- **Offline / PWA** — Install prompt, service worker, "saved when back online" messaging
+- **Haptics & feedback** — What fires on capture vs error vs long-press
+- **Auth** — Login on small screens, password managers, session refresh
+- **Accessibility** — Dynamic type, contrast, VoiceOver labels on icon-only controls
+- **Platform quirks** — iOS Safari vs Android WebView, notch, home indicator
+
 ---
 
 ## Data & Stability
