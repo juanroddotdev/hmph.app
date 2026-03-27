@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { useTagOptionsStore } from '@/stores/tagOptionsStore'
-import { MOOD_EMOJIS } from '@/lib/emojiTags'
+import { MOOD_EMOJIS, resolveShortcuts } from '@/lib/emojiTags'
 
 const model = defineModel<string>({ default: '' })
 const emit = defineEmits<{
   submit: [content: string]
+  done: []
 }>()
 
 const tagStore = useTagOptionsStore()
@@ -50,14 +51,38 @@ function insertEmoji(emoji: string) {
   insertAtCursor(emoji)
 }
 
+function autoGrow() {
+  const textarea = inputRef.value
+  if (!textarea) return
+  textarea.style.height = 'auto'
+  textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px'
+}
+
+function resetHeight() {
+  const textarea = inputRef.value
+  if (!textarea) return
+  textarea.style.height = 'auto'
+}
+
+function submitCapture() {
+  const raw = model.value?.trim()
+  if (!raw) return
+  const content = resolveShortcuts(raw, tagStore.tagOptions)
+  emit('submit', content)
+  model.value = ''
+  nextTick(resetHeight)
+}
+
 function handleKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Enter' && e.shiftKey) {
+    e.preventDefault()
+    submitCapture()
+    return
+  }
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
-    const content = model.value?.trim()
-    if (content) {
-      emit('submit', content)
-      model.value = ''
-    }
+    submitCapture()
+    emit('done')
   }
 }
 
@@ -71,9 +96,10 @@ onMounted(() => {
     <textarea
       ref="inputRef"
       v-model="model"
-      class="mb-4 w-full min-h-[3rem] max-h-32 resize-none rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-3 text-base text-white placeholder-slate-400 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+      class="mb-4 w-full min-h-[3rem] max-h-[200px] overflow-y-auto rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-3 text-base text-white placeholder-slate-400 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
       placeholder="Type something... Hit Enter to capture."
       rows="1"
+      @input="autoGrow"
       @keydown="handleKeyDown"
     />
 

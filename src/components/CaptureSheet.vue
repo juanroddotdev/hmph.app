@@ -62,7 +62,7 @@ onUnmounted(() => {
             </button>
           </div>
           <div class="p-4">
-            <CaptureInput @submit="(c) => { emit('submit', c); emit('close') }" />
+            <CaptureInput @submit="(c) => emit('submit', c)" @done="emit('close')" />
           </div>
         </div>
       </div>
