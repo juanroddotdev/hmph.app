@@ -12,6 +12,9 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <WeeklyReview />
+    <div v-if="store.isLoading" class="py-8 text-center text-slate-500">
+      Loading…
+    </div>
+    <WeeklyReview v-else />
   </div>
 </template>
