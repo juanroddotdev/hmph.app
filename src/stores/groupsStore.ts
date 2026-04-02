@@ -57,6 +57,20 @@ export const useGroupsStore = defineStore('groups', () => {
     return true
   }
 
+  function renameGroup(oldName: string, newName: string): boolean {
+    const n = newName.trim().toLowerCase()
+    if (!n || n === oldName) return false
+    if (!groups.value.includes(oldName)) return false
+    if (groups.value.includes(n)) return false
+    groups.value = groups.value.map((g) => (g === oldName ? n : g))
+    const next = { ...postGroups.value }
+    for (const [postId, g] of Object.entries(next)) {
+      if (g === oldName) next[postId] = n
+    }
+    postGroups.value = next
+    return true
+  }
+
   function removeGroup(name: string) {
     groups.value = groups.value.filter((g) => g !== name)
     for (const [postId, g] of Object.entries(postGroups.value)) {
@@ -86,6 +100,7 @@ export const useGroupsStore = defineStore('groups', () => {
     groups,
     postGroups,
     addGroup,
+    renameGroup,
     removeGroup,
     assignPostToGroup,
     removePostFromGroup,
