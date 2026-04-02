@@ -7,6 +7,7 @@ import PostCard from '@/components/PostCard.vue'
 import DayPostSquares from '@/components/DayPostSquares.vue'
 import { useThoughtStore } from '@/stores/thoughtStore'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { useGroupsStore } from '@/stores/groupsStore'
 import type { Post } from '@/lib/supabase'
 import {
   todayKey,
@@ -18,7 +19,9 @@ import { quoteForDay } from '@/lib/dailyQuotes'
 
 const store = useThoughtStore()
 const settings = useSettingsStore()
+const groupsStore = useGroupsStore()
 const showSheet = ref(false)
+const selectedGroupFilter = ref<string | null>(null)
 const expandedDayKey = ref<string | null>(null)
 const expandedOpenDays = ref<string[]>([])
 const enableMockWeek = import.meta.env.DEV
@@ -92,9 +95,27 @@ const displayFeed = computed(() =>
     : store.feed
 )
 
+const filteredFeed = computed(() => {
+  const posts = displayFeed.value
+  const g = selectedGroupFilter.value
+  if (g == null) return posts
+  return posts.filter((p) => groupsStore.getPostGroup(p.id) === g)
+})
+
+function groupFilterPillClass(key: string | null) {
+  const active =
+    key === null ? selectedGroupFilter.value === null : selectedGroupFilter.value === key
+  return [
+    'shrink-0 rounded-lg px-3 py-1.5 text-sm capitalize transition',
+    active
+      ? 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/40'
+      : 'bg-slate-900/55 text-slate-300 hover:bg-slate-700/60',
+  ]
+}
+
 const todayK = computed(() => todayKey())
 
-const grouped = computed(() => groupPostsByLocalDay(displayFeed.value))
+const grouped = computed(() => groupPostsByLocalDay(filteredFeed.value))
 
 const todaySectionPosts = computed(() => {
   const tk = todayK.value
@@ -149,6 +170,39 @@ onMounted(() => {
       Loading...
     </div>
     <div v-else class="flex flex-col gap-6 pb-20">
+      <div class="-mx-1 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
+        <button
+          type="button"
+          :class="groupFilterPillClass(null)"
+          @click="selectedGroupFilter = null"
+        >
+          All
+        </button>
+        <button
+          v-for="name in groupsStore.groups"
+          :key="name"
+          type="button"
+          :class="groupFilterPillClass(name)"
+          @click="selectedGroupFilter = name"
+        >
+          {{ name }}
+        </button>
+      </div>
+
+      <template
+        v-if="selectedGroupFilter && filteredFeed.length === 0 && displayFeed.length > 0"
+      >
+        <div class="ui-block bg-slate-800/40 px-4 py-8 text-center">
+          <p class="mb-2 text-slate-400">
+            No posts in "{{ selectedGroupFilter }}".
+          </p>
+          <p class="text-sm text-slate-500">
+            Assign posts with a long-press on a card, or pick another group.
+          </p>
+        </div>
+      </template>
+
+      <template v-else>
       <section>
         <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
           Today
@@ -164,8 +218,16 @@ onMounted(() => {
           v-else
           class="ui-block bg-slate-800/40 px-4 py-8 text-center"
         >
-          <p class="mb-2 text-slate-400">Nothing captured today yet.</p>
-          <p class="text-sm italic text-slate-500">{{ todayQuote }}</p>
+          <template v-if="selectedGroupFilter">
+            <p class="mb-2 text-slate-400">No posts in this group today.</p>
+            <p class="text-sm text-slate-500">
+              Try another filter or assign posts with a long-press.
+            </p>
+          </template>
+          <template v-else>
+            <p class="mb-2 text-slate-400">Nothing captured today yet.</p>
+            <p class="text-sm italic text-slate-500">{{ todayQuote }}</p>
+          </template>
         </div>
       </section>
 
@@ -210,6 +272,7 @@ onMounted(() => {
           </div>
         </div>
       </section>
+      </template>
     </div>
 
     <div class="fixed bottom-6 right-4 z-30 pb-[env(safe-area-inset-bottom)] pr-[env(safe-area-inset-right)]">
