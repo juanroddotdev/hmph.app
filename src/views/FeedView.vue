@@ -131,6 +131,10 @@ const previousDays = computed(() => previousDayEntries(grouped.value, todayK.val
 
 const todayQuote = computed(() => quoteForDay(todayK.value))
 
+const isFirstRunEmpty = computed(
+  () => !enableMockWeek && !store.isLoading && store.feed.length === 0
+)
+
 const dayListWrapperClass = computed(() =>
   settings.feedDayRowStyle === 'card' ? 'flex flex-col gap-1' : 'flex flex-col divide-y divide-slate-700/50'
 )
@@ -222,6 +226,12 @@ onMounted(() => {
             <p class="mb-2 text-slate-400">No posts in this group today.</p>
             <p class="text-sm text-slate-500">
               Try another filter or assign posts with a long-press.
+            </p>
+          </template>
+          <template v-else-if="isFirstRunEmpty">
+            <p class="mb-2 text-slate-300">You have not captured anything yet.</p>
+            <p class="text-sm text-slate-500">
+              Tap the capture button to add your first thought.
             </p>
           </template>
           <template v-else>
