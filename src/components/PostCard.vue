@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { Post } from '@/lib/supabase'
 import { useSettingsStore, type TimeFormat } from '@/stores/settingsStore'
 import { useThoughtStore } from '@/stores/thoughtStore'
@@ -36,11 +36,29 @@ const editContent = ref('')
 const newGroupName = ref('')
 const showAddGroup = ref(false)
 
+/** Done cards: tap toggles expanded (full size + Done pill) vs collapsed (receded). */
+const doneExpanded = ref(false)
+
+watch(
+  () => props.post.status,
+  (s) => {
+    if (s !== 'done') doneExpanded.value = false
+  }
+)
+
 const { start: startLongPress, stop: stopLongPress, cancel: cancelLongPress } = useLongPress(
   () => {
     if (cardState.value === 'normal') cardState.value = 'menu'
   },
-  { duration: 400 }
+  {
+    duration: 400,
+    onShortPress() {
+      if (cardState.value !== 'normal') return
+      if (props.post.status === 'done') {
+        doneExpanded.value = !doneExpanded.value
+      }
+    },
+  }
 )
 
 function assignToGroup(groupName: string) {
@@ -139,6 +157,64 @@ const renderedContent = computed(() => {
 const displayTime = computed(() =>
   formatPostTime(props.post.created_at, settings.timeFormat, { omitDate: true })
 )
+
+const isDoneCollapsed = computed(
+  () => props.post.status === 'done' && !doneExpanded.value
+)
+
+/** Open loop: not done, not yet processed this week. */
+const isUnprocessedOpen = computed(
+  () => props.post.status !== 'done' && !props.post.is_processed
+)
+
+/** Pushed / processed but still active — calmer than open, distinct from done. */
+const isPushedLater = computed(
+  () => props.post.is_processed && props.post.status !== 'done'
+)
+
+/** Normal shell: padding + subtle background by state (Step 2). */
+const normalShellClass = computed(() => {
+  const p = props.post
+  const pad = isDoneCollapsed.value ? 'px-2 py-2' : 'px-3 py-3'
+  const base = `relative ${pad} transition-[padding] duration-300`
+
+  if (p.status === 'done') {
+    return base
+  }
+  if (isUnprocessedOpen.value) {
+    return `${base} rounded-lg bg-amber-500/[0.07]`
+  }
+  if (isPushedLater.value) {
+    return `${base} rounded-lg bg-slate-900/30`
+  }
+  return base
+})
+
+const bodyTextClass = computed(() => {
+  const base =
+    'relative z-[1] whitespace-pre-wrap pr-10 transition-all duration-300 '
+
+  if (props.post.status === 'done' && isDoneCollapsed.value) {
+    return `${base} text-sm text-slate-300/90 opacity-[0.65] grayscale`
+  }
+  if (props.post.status === 'done' && doneExpanded.value) {
+    return `${base} text-base text-slate-100`
+  }
+  if (isUnprocessedOpen.value) {
+    return `${base} text-base text-slate-50`
+  }
+  if (isPushedLater.value) {
+    return `${base} text-base text-slate-300`
+  }
+  return `${base} text-base text-slate-100`
+})
+
+const decorativeEmojiClass = computed(() =>
+  [
+    'pointer-events-none absolute right-2 top-2 z-0 flex flex-col items-center text-lg leading-none transition-opacity duration-300',
+    isDoneCollapsed.value ? 'opacity-[0.12]' : 'opacity-[0.22]',
+  ].join(' ')
+)
 </script>
 
 <template>
@@ -148,16 +224,17 @@ const displayTime = computed(() =>
       'scale-[1.02] bg-slate-800/80 shadow-lg shadow-slate-900/50':
         cardState === 'menu' || cardState === 'groupPicker' || cardState === 'editing',
     }"
+    :aria-expanded="post.status === 'done' ? doneExpanded : undefined"
     @pointerdown="startLongPress"
     @pointerup="stopLongPress"
     @pointerleave="stopLongPress"
     @pointercancel="cancelLongPress"
   >
-    <!-- Normal view: body first, meta row below; decorative emojis stacked top-right -->
-    <div v-if="cardState === 'normal'" class="relative px-3 py-3">
+    <!-- Normal view: Step 2 state styling + done tap to expand -->
+    <div v-if="cardState === 'normal'" :class="normalShellClass">
       <div
         v-if="decorativeEmojis.length"
-        class="pointer-events-none absolute right-2 top-2 z-0 flex flex-col items-center text-lg leading-none opacity-[0.22]"
+        :class="decorativeEmojiClass"
         aria-hidden="true"
       >
         <span
@@ -169,14 +246,18 @@ const displayTime = computed(() =>
           {{ emoji }}
         </span>
       </div>
-      <p
-        class="relative z-[1] whitespace-pre-wrap pr-10 text-slate-100"
-        v-html="renderedContent"
-      />
+      <p :class="bodyTextClass" v-html="renderedContent" />
       <footer
         class="relative z-[1] mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-slate-400"
       >
         <time :datetime="post.created_at">{{ displayTime }}</time>
+        <span
+          v-if="isPushedLater"
+          class="text-slate-600"
+          title="Processed for this week; may return next review"
+        >
+          · Later
+        </span>
         <span
           v-if="groupsStore.getPostGroup(post.id)"
           class="rounded bg-slate-700/60 px-2 py-0.5 text-slate-500"
@@ -184,20 +265,26 @@ const displayTime = computed(() =>
           {{ groupsStore.getPostGroup(post.id) }}
         </span>
         <span
-          v-if="post.status === 'done'"
+          v-if="post.status === 'done' && doneExpanded"
           class="rounded bg-emerald-900/50 px-2 py-0.5 text-emerald-400"
         >
           Done
         </span>
         <span v-if="showActions && !post.is_processed" class="ml-auto flex shrink-0 gap-2">
           <button
+            type="button"
             class="rounded bg-emerald-600/20 px-2 py-1 text-emerald-400 hover:bg-emerald-600/30"
+            @pointerdown.stop
+            @pointerup.stop
             @click.stop="emit('done')"
           >
             Done
           </button>
           <button
+            type="button"
             class="rounded bg-amber-600/20 px-2 py-1 text-amber-400 hover:bg-amber-600/30"
+            @pointerdown.stop
+            @pointerup.stop
             @click.stop="emit('push')"
           >
             Push
