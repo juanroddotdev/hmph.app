@@ -49,9 +49,9 @@ onUnmounted(() => {
           @click="handleBackdropClick"
         />
         <div
-          class="relative max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-slate-600 bg-slate-800 pb-[env(safe-area-inset-bottom)]"
+          class="relative max-h-[85vh] overflow-y-auto rounded-t-2xl bg-slate-800 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_40px_rgba(0,0,0,0.45)]"
         >
-          <div class="sticky top-0 z-10 flex justify-end border-b border-slate-600/60 bg-slate-800 p-2">
+          <div class="sticky top-0 z-10 flex justify-end bg-slate-800 p-2">
             <button
               type="button"
               class="rounded-full p-2 text-slate-400 transition hover:bg-slate-700 hover:text-white"

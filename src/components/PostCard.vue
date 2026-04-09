@@ -137,9 +137,9 @@ const displayTime = computed(() =>
 
 <template>
   <article
-    class="ui-block post-block relative overflow-hidden bg-slate-800/60 transition-all duration-300 hover:border-slate-500"
+    class="ui-block post-block relative overflow-hidden bg-slate-800/60 transition-all duration-300 hover:bg-slate-800/75"
     :class="{
-      'scale-[1.02] shadow-lg shadow-slate-900/50 ring-2 ring-amber-500/30':
+      'scale-[1.02] bg-slate-800/80 shadow-lg shadow-slate-900/50':
         cardState === 'menu' || cardState === 'groupPicker' || cardState === 'editing',
     }"
     @pointerdown="startLongPress"
@@ -243,7 +243,7 @@ const displayTime = computed(() =>
         <button
           v-for="group in groupsStore.groups"
           :key="group"
-          class="rounded-xl border border-slate-600 bg-slate-800/60 py-3 font-medium text-slate-200 transition hover:border-amber-500/50 hover:bg-slate-700/60"
+          class="rounded-xl bg-slate-800/60 py-3 font-medium text-slate-200 transition hover:bg-slate-700/60"
           @click="assignToGroup(group)"
         >
           {{ group }}
@@ -253,7 +253,7 @@ const displayTime = computed(() =>
             v-model="newGroupName"
             type="text"
             placeholder="New group name"
-            class="flex-1 rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-slate-200"
+            class="flex-1 rounded-xl bg-slate-900 px-3 py-2 text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/40"
             @keyup.enter="addGroupAndAssign"
           />
           <button
@@ -263,7 +263,7 @@ const displayTime = computed(() =>
             Add
           </button>
           <button
-            class="rounded-xl border border-slate-600 px-4 py-2 text-slate-400"
+            class="rounded-xl bg-slate-700/50 px-4 py-2 text-slate-400 transition hover:bg-slate-700/70"
             @click="showAddGroup = false; newGroupName = ''"
           >
             Cancel
@@ -271,7 +271,7 @@ const displayTime = computed(() =>
         </div>
         <button
           v-else
-          class="rounded-xl border border-dashed border-slate-600 py-3 text-slate-500 transition hover:border-amber-500/50 hover:text-amber-400"
+          class="rounded-xl bg-slate-800/40 py-3 text-slate-500 transition hover:bg-slate-800/70 hover:text-amber-400"
           @click="showAddGroup = true"
         >
           + New group
@@ -290,12 +290,12 @@ const displayTime = computed(() =>
       <textarea
         ref="editTextareaRef"
         v-model="editContent"
-        class="min-h-[4rem] w-full resize-none rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-3 text-slate-100 placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+        class="min-h-[4rem] w-full resize-none rounded-lg bg-slate-900/80 px-4 py-3 text-slate-100 placeholder-slate-500 outline-none transition focus:ring-2 focus:ring-amber-500/50"
         placeholder="Edit your thought..."
         rows="3"
       />
 
-      <div class="flex flex-col gap-2 border-t border-slate-600/60 pt-3">
+      <div class="flex flex-col gap-2 rounded-lg bg-slate-900/40 px-2 py-3">
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-xs text-slate-500">Time:</span>
           <div class="flex gap-1">
@@ -356,7 +356,7 @@ const displayTime = computed(() =>
           Save
         </button>
         <button
-          class="rounded-xl border border-slate-600 px-4 py-3 text-slate-400 transition hover:border-slate-500 hover:text-slate-300"
+          class="rounded-xl bg-slate-700/50 px-4 py-3 text-slate-400 transition hover:bg-slate-700/70 hover:text-slate-300"
           @click="cancelEdit"
         >
           Cancel

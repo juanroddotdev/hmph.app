@@ -44,7 +44,7 @@ async function submit() {
           placeholder="Email"
           required
           autocomplete="email"
-          class="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-white placeholder-slate-400 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+          class="w-full rounded-xl bg-slate-800 px-4 py-3 text-white placeholder-slate-400 outline-none transition focus:ring-2 focus:ring-amber-500"
         />
       </div>
       <div>
@@ -55,7 +55,7 @@ async function submit() {
           required
           :minlength="isSignUp ? 6 : 1"
           autocomplete="current-password"
-          class="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-white placeholder-slate-400 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+          class="w-full rounded-xl bg-slate-800 px-4 py-3 text-white placeholder-slate-400 outline-none transition focus:ring-2 focus:ring-amber-500"
         />
         <p v-if="isSignUp" class="mt-1 text-xs text-slate-500">Min 6 characters</p>
       </div>

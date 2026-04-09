@@ -108,7 +108,7 @@ function groupFilterPillClass(key: string | null) {
   return [
     'shrink-0 rounded-lg px-3 py-1.5 text-sm capitalize transition',
     active
-      ? 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/40'
+      ? 'bg-amber-500/20 text-amber-300'
       : 'bg-slate-900/55 text-slate-300 hover:bg-slate-700/60',
   ]
 }
@@ -135,9 +135,7 @@ const isFirstRunEmpty = computed(
   () => !enableMockWeek && !store.isLoading && store.feed.length === 0
 )
 
-const dayListWrapperClass = computed(() =>
-  settings.feedDayRowStyle === 'card' ? 'flex flex-col gap-1' : 'flex flex-col divide-y divide-slate-700/50'
-)
+const dayListWrapperClass = computed(() => 'flex flex-col gap-2')
 
 function isDayExpanded(dayKey: string): boolean {
   return settings.feedDayExpandMode === 'single'
@@ -252,7 +250,7 @@ onMounted(() => {
               :class="[
                 'flex w-full items-center justify-between text-left transition',
                 settings.feedDayRowStyle === 'card'
-                  ? 'rounded-xl border border-slate-600/60 bg-slate-800/50 px-4 py-3 hover:border-slate-500 hover:bg-slate-800/80'
+                  ? 'rounded-xl bg-slate-800/50 px-4 py-3 hover:bg-slate-800/80'
                   : 'px-1 py-3 hover:bg-slate-800/30',
               ]"
               :aria-expanded="isDayExpanded(dayKey)"

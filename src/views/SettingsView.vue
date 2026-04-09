@@ -80,8 +80,8 @@ const expandOptions: { value: FeedDayExpandMode; label: string }[] = [
 ]
 
 const rowOptions: { value: FeedDayRowStyle; label: string }[] = [
-  { value: 'flat', label: 'Flat (no border)' },
-  { value: 'card', label: 'Card (bordered)' },
+  { value: 'flat', label: 'Flat' },
+  { value: 'card', label: 'Card (padded)' },
 ]
 
 const countOptions: { value: FeedDayCountDisplay; label: string }[] = [
@@ -104,7 +104,7 @@ const countOptions: { value: FeedDayCountDisplay; label: string }[] = [
         <label
           v-for="opt in timeOptions"
           :key="opt.value"
-          class="ui-block settings-option-block flex cursor-pointer items-center gap-3 bg-slate-800/60 px-4 py-3 transition hover:border-slate-500"
+          class="ui-block settings-option-block flex cursor-pointer items-center gap-3 bg-slate-800/60 px-4 py-3 transition hover:bg-slate-800/90"
         >
           <input
             v-model="settings.timeFormat"
@@ -123,7 +123,7 @@ const countOptions: { value: FeedDayCountDisplay; label: string }[] = [
         <label
           v-for="opt in expandOptions"
           :key="opt.value"
-          class="ui-block settings-option-block flex cursor-pointer items-center gap-3 bg-slate-800/60 px-4 py-3 transition hover:border-slate-500"
+          class="ui-block settings-option-block flex cursor-pointer items-center gap-3 bg-slate-800/60 px-4 py-3 transition hover:bg-slate-800/90"
         >
           <input
             v-model="settings.feedDayExpandMode"
@@ -142,7 +142,7 @@ const countOptions: { value: FeedDayCountDisplay; label: string }[] = [
         <label
           v-for="opt in rowOptions"
           :key="opt.value"
-          class="ui-block settings-option-block flex cursor-pointer items-center gap-3 bg-slate-800/60 px-4 py-3 transition hover:border-slate-500"
+          class="ui-block settings-option-block flex cursor-pointer items-center gap-3 bg-slate-800/60 px-4 py-3 transition hover:bg-slate-800/90"
         >
           <input
             v-model="settings.feedDayRowStyle"
@@ -161,7 +161,7 @@ const countOptions: { value: FeedDayCountDisplay; label: string }[] = [
         <label
           v-for="opt in countOptions"
           :key="opt.value"
-          class="ui-block settings-option-block flex cursor-pointer items-center gap-3 bg-slate-800/60 px-4 py-3 transition hover:border-slate-500"
+          class="ui-block settings-option-block flex cursor-pointer items-center gap-3 bg-slate-800/60 px-4 py-3 transition hover:bg-slate-800/90"
         >
           <input
             v-model="settings.feedDayCountDisplay"
@@ -189,7 +189,7 @@ const countOptions: { value: FeedDayCountDisplay; label: string }[] = [
             <input
               v-model="renameDraft"
               type="text"
-              class="w-full rounded-lg border border-slate-600 bg-slate-900/70 px-3 py-2 text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/40"
+              class="w-full rounded-lg bg-slate-900/70 px-3 py-2 text-slate-100 outline-none focus:ring-2 focus:ring-amber-500/40"
               :aria-invalid="!!renameError"
             />
             <p v-if="renameError" class="text-xs text-red-400">{{ renameError }}</p>
@@ -242,7 +242,7 @@ const countOptions: { value: FeedDayCountDisplay; label: string }[] = [
           v-model="newGroupName"
           type="text"
           placeholder="New group name"
-          class="min-w-0 flex-1 rounded-lg border border-slate-600 bg-slate-900/70 px-3 py-2 text-slate-100 placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500/40"
+          class="min-w-0 flex-1 rounded-lg bg-slate-900/70 px-3 py-2 text-slate-100 placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500/40"
           @keydown.enter.prevent="handleAddGroup"
         />
         <button

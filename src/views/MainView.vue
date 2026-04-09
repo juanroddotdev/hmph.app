@@ -12,7 +12,7 @@ const activeTab = ref<'feed' | 'review' | 'settings'>('feed')
 
 <template>
   <div class="min-h-screen bg-slate-900 pb-[env(safe-area-inset-bottom)]">
-    <header class="sticky top-0 z-10 border-b border-slate-700/80 bg-slate-900/95 backdrop-blur">
+    <header class="sticky top-0 z-10 bg-slate-900/95 backdrop-blur">
       <div class="mx-auto flex max-w-md items-center justify-between px-4 py-3">
         <h1 class="text-xl font-bold text-amber-400">HMPF</h1>
         <nav class="flex items-center gap-1">

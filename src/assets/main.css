@@ -13,6 +13,6 @@
 
 @layer components {
   .ui-block {
-    @apply rounded-xl border border-slate-600/60;
+    @apply rounded-xl;
   }
 }
