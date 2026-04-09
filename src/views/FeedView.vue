@@ -137,6 +137,11 @@ const isFirstRunEmpty = computed(
 
 const dayListWrapperClass = computed(() => 'flex flex-col gap-2')
 
+/** Post lists in Today / Earlier (Step 4). */
+const feedPostListClass = computed(() =>
+  settings.feedDensity === 'compact' ? 'flex flex-col gap-0' : 'flex flex-col gap-3'
+)
+
 function isDayExpanded(dayKey: string): boolean {
   return settings.feedDayExpandMode === 'single'
     ? expandedDayKey.value === dayKey
@@ -209,12 +214,14 @@ onMounted(() => {
         <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
           Today
         </h2>
-        <div v-if="todaySectionPosts.length > 0" class="flex flex-col gap-3">
+        <div v-if="todaySectionPosts.length > 0" :class="feedPostListClass">
           <PostCard
-            v-for="post in todaySectionPosts"
+            v-for="(post, i) in todaySectionPosts"
             :key="post.id"
             :post="post"
             enable-feed-swipe
+            :feed-density="settings.feedDensity"
+            :hide-feed-divider="i === todaySectionPosts.length - 1"
           />
         </div>
         <div
@@ -274,12 +281,14 @@ onMounted(() => {
               class="overflow-hidden transition-[max-height] duration-300 ease-in-out"
               :class="isDayExpanded(dayKey) ? 'max-h-[3000px]' : 'max-h-0'"
             >
-              <div class="flex flex-col gap-3 pl-1 pb-2 pt-1">
+              <div :class="[feedPostListClass, 'pl-1 pb-2 pt-1']">
                 <PostCard
-                  v-for="post in posts"
+                  v-for="(post, j) in posts"
                   :key="post.id"
                   :post="post"
                   enable-feed-swipe
+                  :feed-density="settings.feedDensity"
+                  :hide-feed-divider="j === posts.length - 1"
                 />
               </div>
             </div>

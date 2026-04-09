@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import type { Post } from '@/lib/supabase'
-import { useSettingsStore, type TimeFormat } from '@/stores/settingsStore'
+import {
+  useSettingsStore,
+  type TimeFormat,
+  type FeedDensity,
+} from '@/stores/settingsStore'
 import { useThoughtStore } from '@/stores/thoughtStore'
 import { formatPostTime } from '@/lib/formatTime'
 import {
@@ -22,8 +26,12 @@ const props = withDefaults(
     showActions?: boolean
     /** Feed-only: swipe Done/Push + ghost control (Step 3). */
     enableFeedSwipe?: boolean
+    /** Feed-only: card vs compact list (Step 4). */
+    feedDensity?: FeedDensity
+    /** Compact feed: hide bottom divider on last row in section. */
+    hideFeedDivider?: boolean
   }>(),
-  { enableFeedSwipe: false }
+  { enableFeedSwipe: false, feedDensity: 'card', hideFeedDivider: false }
 )
 
 const emit = defineEmits<{
@@ -98,13 +106,47 @@ const articleSwipeStyle = computed(() => {
   return swipe.trackStyle.value
 })
 
-const swipeShellClass = computed(() =>
-  props.enableFeedSwipe ? 'relative overflow-hidden rounded-xl' : 'contents'
+const isCompactFeed = computed(() => props.feedDensity === 'compact')
+
+const swipeShellClass = computed(() => {
+  if (!props.enableFeedSwipe) return 'contents'
+  return isCompactFeed.value
+    ? 'relative overflow-hidden rounded-none'
+    : 'relative overflow-hidden rounded-xl'
+})
+
+const peekRoundedClass = computed(() =>
+  isCompactFeed.value ? 'rounded-none' : 'rounded-xl'
 )
 
 const showSwipePeek = computed(
   () => props.enableFeedSwipe && cardState.value === 'normal'
 )
+
+const articleClass = computed(() => {
+  const menuOpen =
+    cardState.value === 'menu' ||
+    cardState.value === 'groupPicker' ||
+    cardState.value === 'editing'
+
+  if (isCompactFeed.value) {
+    if (menuOpen) {
+      return 'ui-block post-block relative z-10 overflow-hidden rounded-xl border border-slate-600/50 bg-slate-800/90 transition-all duration-300 hover:bg-slate-800/95 scale-[1.02] shadow-lg shadow-slate-900/50'
+    }
+    return [
+      'post-block relative z-10 overflow-hidden rounded-none border-0 bg-slate-900/20 shadow-none',
+      'transition-colors duration-200 hover:bg-slate-800/40',
+      props.hideFeedDivider ? '' : 'border-b border-slate-700/40',
+    ]
+      .filter(Boolean)
+      .join(' ')
+  }
+
+  if (menuOpen) {
+    return 'ui-block post-block relative z-10 overflow-hidden bg-slate-800/60 transition-all duration-300 hover:bg-slate-800/75 scale-[1.02] bg-slate-800/80 shadow-lg shadow-slate-900/50'
+  }
+  return 'ui-block post-block relative z-10 overflow-hidden bg-slate-800/60 transition-colors duration-300 hover:bg-slate-800/75'
+})
 
 function onArticlePointerDown(e: PointerEvent) {
   if (cardState.value === 'normal') {
@@ -247,20 +289,28 @@ const isPushedLater = computed(
   () => props.post.is_processed && props.post.status !== 'done'
 )
 
-/** Normal shell: padding + subtle background by state (Step 2). */
+/** Normal shell: padding + subtle background by state (Step 2 + Step 4 compact). */
 const normalShellClass = computed(() => {
   const p = props.post
-  const pad = isDoneCollapsed.value ? 'px-2 py-2' : 'px-3 py-3'
+  const c = isCompactFeed.value
+  const pad = isDoneCollapsed.value
+    ? c
+      ? 'px-2 py-1.5'
+      : 'px-2 py-2'
+    : c
+      ? 'px-2 py-2'
+      : 'px-3 py-3'
   const base = `relative ${pad} transition-[padding] duration-300`
+  const r = c ? 'rounded-none' : 'rounded-lg'
 
   if (p.status === 'done') {
     return base
   }
   if (isUnprocessedOpen.value) {
-    return `${base} rounded-lg bg-amber-500/[0.07]`
+    return `${base} ${r} bg-amber-500/[0.07]`
   }
   if (isPushedLater.value) {
-    return `${base} rounded-lg bg-slate-900/30`
+    return `${base} ${r} ${c ? 'bg-slate-800/40' : 'bg-slate-900/30'}`
   }
   return base
 })
@@ -296,7 +346,8 @@ const decorativeEmojiClass = computed(() =>
   <div :class="swipeShellClass">
     <div
       v-if="showSwipePeek"
-      class="pointer-events-none absolute inset-0 z-0 flex overflow-hidden rounded-xl"
+      class="pointer-events-none absolute inset-0 z-0 flex overflow-hidden"
+      :class="peekRoundedClass"
       aria-hidden="true"
     >
       <div
@@ -314,11 +365,7 @@ const decorativeEmojiClass = computed(() =>
 
     <article
       ref="swipeSurfaceRef"
-      class="ui-block post-block relative z-10 overflow-hidden bg-slate-800/60 transition-colors duration-300 hover:bg-slate-800/75"
-      :class="{
-        'scale-[1.02] bg-slate-800/80 shadow-lg shadow-slate-900/50':
-          cardState === 'menu' || cardState === 'groupPicker' || cardState === 'editing',
-      }"
+      :class="articleClass"
       :style="articleSwipeStyle"
       :aria-expanded="post.status === 'done' ? doneExpanded : undefined"
       @pointerdown="onArticlePointerDown"

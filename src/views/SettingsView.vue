@@ -7,6 +7,7 @@ import {
   type FeedDayExpandMode,
   type FeedDayRowStyle,
   type FeedDayCountDisplay,
+  type FeedDensity,
 } from '@/stores/settingsStore'
 import { useGroupsStore } from '@/stores/groupsStore'
 
@@ -89,6 +90,11 @@ const countOptions: { value: FeedDayCountDisplay; label: string }[] = [
   { value: 'number', label: 'Number' },
   { value: 'squares', label: 'Squares' },
 ]
+
+const feedDensityOptions: { value: FeedDensity; label: string; hint: string }[] = [
+  { value: 'card', label: 'Cards', hint: 'Rounded rows, more spacing' },
+  { value: 'compact', label: 'Compact list', hint: 'Dividers, more posts on screen' },
+]
 </script>
 
 <template>
@@ -113,6 +119,29 @@ const countOptions: { value: FeedDayCountDisplay; label: string }[] = [
             class="h-4 w-4 accent-amber-500"
           />
           <span class="text-slate-200">{{ opt.label }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div>
+      <label class="mb-2 block text-sm font-medium text-slate-400">Feed density</label>
+      <p class="mb-2 text-xs text-slate-500">Capture tab only — how posts are listed in the feed.</p>
+      <div class="flex flex-col gap-2">
+        <label
+          v-for="opt in feedDensityOptions"
+          :key="opt.value"
+          class="ui-block settings-option-block flex cursor-pointer items-center gap-3 bg-slate-800/60 px-4 py-3 transition hover:bg-slate-800/90"
+        >
+          <input
+            v-model="settings.feedDensity"
+            type="radio"
+            :value="opt.value"
+            class="h-4 w-4 accent-amber-500"
+          />
+          <span class="flex flex-col gap-0.5">
+            <span class="text-slate-200">{{ opt.label }}</span>
+            <span class="text-xs text-slate-500">{{ opt.hint }}</span>
+          </span>
         </label>
       </div>
     </div>
