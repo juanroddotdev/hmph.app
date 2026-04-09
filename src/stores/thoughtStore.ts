@@ -3,10 +3,77 @@ import { ref, computed } from 'vue'
 import { supabase, type Post } from '@/lib/supabase'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
 
+export type FeedUndoPayload = {
+  snapshot: Post
+  kind: 'done' | 'push'
+}
+
 export const useThoughtStore = defineStore('thought', () => {
   const posts = ref<Post[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+
+  /** Last feed/review action eligible for shake / toast undo (~8s). */
+  const feedUndo = ref<FeedUndoPayload | null>(null)
+  let feedUndoTimer: ReturnType<typeof setTimeout> | null = null
+
+  const FEED_UNDO_MS = 8000
+
+  function clearFeedUndoTimer() {
+    if (feedUndoTimer) {
+      clearTimeout(feedUndoTimer)
+      feedUndoTimer = null
+    }
+  }
+
+  function offerFeedUndo(snapshot: Post, kind: 'done' | 'push') {
+    clearFeedUndoTimer()
+    feedUndo.value = { snapshot: { ...snapshot }, kind }
+    feedUndoTimer = setTimeout(() => {
+      feedUndo.value = null
+      feedUndoTimer = null
+    }, FEED_UNDO_MS)
+  }
+
+  function dismissFeedUndo() {
+    clearFeedUndoTimer()
+    feedUndo.value = null
+  }
+
+  async function undoFeedAction(): Promise<boolean> {
+    const payload = feedUndo.value
+    if (!payload) return false
+    const snap = payload.snapshot
+    dismissFeedUndo()
+
+    const idx = posts.value.findIndex((p) => p.id === snap.id)
+    if (idx === -1) return false
+
+    posts.value[idx] = { ...snap }
+
+    try {
+      const { error: err } = await supabase
+        .from('posts')
+        .update({
+          status: snap.status,
+          is_processed: snap.is_processed,
+          scheduled_for: snap.scheduled_for,
+        })
+        .eq('id', snap.id)
+
+      if (err) throw err
+      try {
+        await Haptics.impact({ style: ImpactStyle.Light })
+      } catch {
+        /* native only */
+      }
+      return true
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to undo'
+      await fetchPosts()
+      return false
+    }
+  }
 
   // Reverse-chronological feed
   const feed = computed(() =>
@@ -102,9 +169,9 @@ export const useThoughtStore = defineStore('thought', () => {
     id: string,
     status: Post['status'],
     isProcessed?: boolean
-  ) {
+  ): Promise<boolean> {
     const idx = posts.value.findIndex((p) => p.id === id)
-    if (idx === -1) return
+    if (idx === -1) return false
 
     const prev = posts.value[idx]
     posts.value[idx] = { ...prev, status, is_processed: isProcessed ?? prev.is_processed }
@@ -116,9 +183,11 @@ export const useThoughtStore = defineStore('thought', () => {
         .eq('id', id)
 
       if (err) throw err
+      return true
     } catch (e) {
       posts.value[idx] = prev
       error.value = e instanceof Error ? e.message : 'Failed to update'
+      return false
     }
   }
 
@@ -127,7 +196,18 @@ export const useThoughtStore = defineStore('thought', () => {
   }
 
   async function markAsDone(id: string) {
-    await updatePostStatus(id, 'done', true)
+    const idx = posts.value.findIndex((p) => p.id === id)
+    if (idx === -1) return
+    const snapshot = { ...posts.value[idx] }
+    const ok = await updatePostStatus(id, 'done', true)
+    if (ok) {
+      offerFeedUndo(snapshot, 'done')
+      try {
+        await Haptics.impact({ style: ImpactStyle.Medium })
+      } catch {
+        /* native only */
+      }
+    }
   }
 
   async function updatePost(id: string, content: string): Promise<boolean> {
@@ -181,13 +261,14 @@ async function deletePost(id: string): Promise<boolean> {
   }
 }
 
-async function pushToNextWeek(id: string) {
+  async function pushToNextWeek(id: string) {
     const nextMonday = new Date(getMondayOfCurrentWeek())
     nextMonday.setDate(nextMonday.getDate() + 7)
 
     const idx = posts.value.findIndex((p) => p.id === id)
     if (idx === -1) return
 
+    const snapshot = { ...posts.value[idx] }
     const prev = posts.value[idx]
     posts.value[idx] = {
       ...prev,
@@ -202,6 +283,12 @@ async function pushToNextWeek(id: string) {
         .eq('id', id)
 
       if (err) throw err
+      offerFeedUndo(snapshot, 'push')
+      try {
+        await Haptics.impact({ style: ImpactStyle.Medium })
+      } catch {
+        /* native only */
+      }
     } catch (e) {
       posts.value[idx] = prev
       error.value = e instanceof Error ? e.message : 'Failed to push'
@@ -223,6 +310,7 @@ async function pushToNextWeek(id: string) {
     unprocessedPosts,
     isLoading,
     error,
+    feedUndo,
     fetchPosts,
     addPost,
     updatePost,
@@ -231,5 +319,7 @@ async function pushToNextWeek(id: string) {
     markAsProcessed,
     markAsDone,
     pushToNextWeek,
+    undoFeedAction,
+    dismissFeedUndo,
   }
 })

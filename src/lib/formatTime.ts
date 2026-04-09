@@ -20,8 +20,28 @@ function getFriendlyBucket(date: Date): string {
   return 'day'
 }
 
-export function formatPostTime(isoString: string, format: TimeFormat): string {
+export type FormatPostTimeOptions = {
+  /** Omit calendar prefix; friendly → bucket only; 12h/24h → clock only */
+  omitDate?: boolean
+}
+
+export function formatPostTime(
+  isoString: string,
+  format: TimeFormat,
+  options?: FormatPostTimeOptions
+): string {
   const d = new Date(isoString)
+  const omitDate = options?.omitDate === true
+
+  if (omitDate) {
+    if (format === 'friendly') {
+      return getFriendlyBucket(d)
+    }
+    return format === 'military'
+      ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+      : d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true })
+  }
+
   const dateStr = d.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',

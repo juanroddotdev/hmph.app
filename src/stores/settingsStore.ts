@@ -5,11 +5,14 @@ export type TimeFormat = 'military' | '12hr' | 'friendly'
 export type FeedDayExpandMode = 'single' | 'multi'
 export type FeedDayRowStyle = 'flat' | 'card'
 export type FeedDayCountDisplay = 'none' | 'number' | 'squares'
+/** Capture tab post rows only (Step 4). */
+export type FeedDensity = 'card' | 'compact'
 
 const STORAGE_TIME = 'hmpf-time-format'
 const STORAGE_EXPAND = 'hmpf-feed-expand-mode'
 const STORAGE_ROW = 'hmpf-feed-day-row-style'
 const STORAGE_COUNT = 'hmpf-feed-day-count'
+const STORAGE_FEED_DENSITY = 'hmpf-feed-density'
 
 function loadTimeFormat(): TimeFormat {
   try {
@@ -43,11 +46,20 @@ function loadCountDisplay(): FeedDayCountDisplay {
   return 'number'
 }
 
+function loadFeedDensity(): FeedDensity {
+  try {
+    const v = localStorage.getItem(STORAGE_FEED_DENSITY) as FeedDensity | null
+    if (v === 'card' || v === 'compact') return v
+  } catch {}
+  return 'card'
+}
+
 export const useSettingsStore = defineStore('settings', () => {
   const timeFormat = ref<TimeFormat>(loadTimeFormat())
   const feedDayExpandMode = ref<FeedDayExpandMode>(loadExpandMode())
   const feedDayRowStyle = ref<FeedDayRowStyle>(loadRowStyle())
   const feedDayCountDisplay = ref<FeedDayCountDisplay>(loadCountDisplay())
+  const feedDensity = ref<FeedDensity>(loadFeedDensity())
 
   watch(timeFormat, (v) => {
     try {
@@ -73,10 +85,17 @@ export const useSettingsStore = defineStore('settings', () => {
     } catch {}
   })
 
+  watch(feedDensity, (v) => {
+    try {
+      localStorage.setItem(STORAGE_FEED_DENSITY, v)
+    } catch {}
+  })
+
   return {
     timeFormat,
     feedDayExpandMode,
     feedDayRowStyle,
     feedDayCountDisplay,
+    feedDensity,
   }
 })
