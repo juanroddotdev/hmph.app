@@ -122,6 +122,12 @@ const tagData = computed(() => {
 })
 const moodEmojis = computed(() => parseMoodEmojis(props.post.content))
 
+/** Decorative cluster: tag emojis then moods, stacked top-right */
+const decorativeEmojis = computed(() => [
+  ...tagData.value.map((t) => t.emoji),
+  ...moodEmojis.value,
+])
+
 const renderedContent = computed(() => {
   const content = stripTagAndMoodForDisplay(props.post.content, tagStore.tagOptions)
   return content.replace(
@@ -131,7 +137,7 @@ const renderedContent = computed(() => {
 })
 
 const displayTime = computed(() =>
-  formatPostTime(props.post.created_at, settings.timeFormat)
+  formatPostTime(props.post.created_at, settings.timeFormat, { omitDate: true })
 )
 </script>
 
@@ -147,27 +153,29 @@ const displayTime = computed(() =>
     @pointerleave="stopLongPress"
     @pointercancel="cancelLongPress"
   >
-    <!-- Normal view -->
-    <div v-if="cardState === 'normal'" class="relative p-4">
-      <!-- Tag emojis: subtle, behind opaque layer -->
+    <!-- Normal view: body first, meta row below; decorative emojis stacked top-right -->
+    <div v-if="cardState === 'normal'" class="relative px-3 py-3">
       <div
-        v-if="tagData.length"
-        class="pointer-events-none absolute top-3 right-3 flex gap-1 text-base opacity-25"
+        v-if="decorativeEmojis.length"
+        class="pointer-events-none absolute right-2 top-2 z-0 flex flex-col items-center text-lg leading-none opacity-[0.22]"
+        aria-hidden="true"
       >
-        <span v-for="t in tagData" :key="t.emoji">{{ t.emoji }}</span>
-      </div>
-      <!-- Mood emojis: subtle, behind opaque layer -->
-      <div
-        v-if="moodEmojis.length"
-        class="pointer-events-none absolute bottom-3 right-3 flex gap-1 text-base opacity-25"
-      >
-        <span v-for="emoji in moodEmojis" :key="emoji">{{ emoji }}</span>
+        <span
+          v-for="(emoji, i) in decorativeEmojis"
+          :key="`${emoji}-${i}`"
+          class="block first:mt-0"
+          :class="i > 0 ? '-mt-2.5' : ''"
+        >
+          {{ emoji }}
+        </span>
       </div>
       <p
-        class="relative whitespace-pre-wrap text-slate-100"
+        class="relative z-[1] whitespace-pre-wrap pr-10 text-slate-100"
         v-html="renderedContent"
       />
-      <footer class="mt-3 flex items-center gap-2 text-xs text-slate-400">
+      <footer
+        class="relative z-[1] mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-slate-400"
+      >
         <time :datetime="post.created_at">{{ displayTime }}</time>
         <span
           v-if="groupsStore.getPostGroup(post.id)"
@@ -181,7 +189,7 @@ const displayTime = computed(() =>
         >
           Done
         </span>
-        <span v-if="showActions && !post.is_processed" class="ml-auto flex gap-2">
+        <span v-if="showActions && !post.is_processed" class="ml-auto flex shrink-0 gap-2">
           <button
             class="rounded bg-emerald-600/20 px-2 py-1 text-emerald-400 hover:bg-emerald-600/30"
             @click.stop="emit('done')"
