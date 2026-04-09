@@ -13,11 +13,18 @@ import {
 import { useTagOptionsStore } from '@/stores/tagOptionsStore'
 import { useGroupsStore } from '@/stores/groupsStore'
 import { useLongPress } from '@/composables/useLongPress'
+import { useFeedPostSwipe } from '@/composables/useFeedPostSwipe'
+import { Check, CalendarDays } from 'lucide-vue-next'
 
-const props = defineProps<{
-  post: Post
-  showActions?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    post: Post
+    showActions?: boolean
+    /** Feed-only: swipe Done/Push + ghost control (Step 3). */
+    enableFeedSwipe?: boolean
+  }>(),
+  { enableFeedSwipe: false }
+)
 
 const emit = defineEmits<{
   done: []
@@ -60,6 +67,74 @@ const { start: startLongPress, stop: stopLongPress, cancel: cancelLongPress } = 
     },
   }
 )
+
+const swipeSurfaceRef = ref<HTMLElement | null>(null)
+
+const swipe = useFeedPostSwipe({
+  enabled: () => props.enableFeedSwipe && cardState.value === 'normal',
+  post: () => props.post,
+  swipeMode: () => {
+    const p = props.post
+    if (p.status === 'done') return 'done'
+    if (p.is_processed) return 'pushed'
+    return 'unprocessed'
+  },
+  cancelLongPress: cancelLongPress,
+  onCommitDone: async () => {
+    await thoughtStore.markAsDone(props.post.id)
+  },
+  onCommitPush: async () => {
+    await thoughtStore.pushToNextWeek(props.post.id)
+  },
+  swipeSurfaceRef,
+})
+
+watch(cardState, (s) => {
+  if (s !== 'normal') swipe.resetPosition()
+})
+
+const articleSwipeStyle = computed(() => {
+  if (!props.enableFeedSwipe || cardState.value !== 'normal') return {}
+  return swipe.trackStyle.value
+})
+
+const swipeShellClass = computed(() =>
+  props.enableFeedSwipe ? 'relative overflow-hidden rounded-xl' : 'contents'
+)
+
+const showSwipePeek = computed(
+  () => props.enableFeedSwipe && cardState.value === 'normal'
+)
+
+function onArticlePointerDown(e: PointerEvent) {
+  if (cardState.value === 'normal') {
+    startLongPress()
+  }
+  swipe.onPointerDown(e)
+}
+
+async function onArticlePointerUp(e: PointerEvent) {
+  await swipe.onPointerUp(e)
+  stopLongPress()
+}
+
+function onArticlePointerMove(e: PointerEvent) {
+  swipe.onPointerMove(e)
+}
+
+function onArticlePointerLeave(e: PointerEvent) {
+  stopLongPress()
+  swipe.onPointerCancel(e)
+}
+
+function onArticlePointerCancel(e: PointerEvent) {
+  cancelLongPress()
+  swipe.onPointerCancel(e)
+}
+
+async function ghostMarkDone() {
+  await thoughtStore.markAsDone(props.post.id)
+}
 
 function assignToGroup(groupName: string) {
   groupsStore.assignPostToGroup(props.post.id, groupName)
@@ -218,80 +293,137 @@ const decorativeEmojiClass = computed(() =>
 </script>
 
 <template>
-  <article
-    class="ui-block post-block relative overflow-hidden bg-slate-800/60 transition-all duration-300 hover:bg-slate-800/75"
-    :class="{
-      'scale-[1.02] bg-slate-800/80 shadow-lg shadow-slate-900/50':
-        cardState === 'menu' || cardState === 'groupPicker' || cardState === 'editing',
-    }"
-    :aria-expanded="post.status === 'done' ? doneExpanded : undefined"
-    @pointerdown="startLongPress"
-    @pointerup="stopLongPress"
-    @pointerleave="stopLongPress"
-    @pointercancel="cancelLongPress"
-  >
-    <!-- Normal view: Step 2 state styling + done tap to expand -->
-    <div v-if="cardState === 'normal'" :class="normalShellClass">
+  <div :class="swipeShellClass">
+    <div
+      v-if="showSwipePeek"
+      class="pointer-events-none absolute inset-0 z-0 flex overflow-hidden rounded-xl"
+      aria-hidden="true"
+    >
       <div
-        v-if="decorativeEmojis.length"
-        :class="decorativeEmojiClass"
-        aria-hidden="true"
+        class="flex w-[42%] min-w-[3.25rem] items-center bg-gradient-to-r from-emerald-950/70 to-emerald-950/20 pl-1.5"
       >
-        <span
-          v-for="(emoji, i) in decorativeEmojis"
-          :key="`${emoji}-${i}`"
-          class="block first:mt-0"
-          :class="i > 0 ? '-mt-2.5' : ''"
-        >
-          {{ emoji }}
-        </span>
+        <Check class="h-7 w-7 text-emerald-400/90" :stroke-width="1.75" />
       </div>
-      <p :class="bodyTextClass" v-html="renderedContent" />
-      <footer
-        class="relative z-[1] mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-slate-400"
+      <div class="min-w-0 flex-1" />
+      <div
+        class="flex w-[42%] min-w-[3.25rem] items-center justify-end bg-gradient-to-l from-amber-950/65 to-amber-950/20 pr-1.5"
       >
-        <time :datetime="post.created_at">{{ displayTime }}</time>
-        <span
-          v-if="isPushedLater"
-          class="text-slate-600"
-          title="Processed for this week; may return next review"
-        >
-          · Later
-        </span>
-        <span
-          v-if="groupsStore.getPostGroup(post.id)"
-          class="rounded bg-slate-700/60 px-2 py-0.5 text-slate-500"
-        >
-          {{ groupsStore.getPostGroup(post.id) }}
-        </span>
-        <span
-          v-if="post.status === 'done' && doneExpanded"
-          class="rounded bg-emerald-900/50 px-2 py-0.5 text-emerald-400"
-        >
-          Done
-        </span>
-        <span v-if="showActions && !post.is_processed" class="ml-auto flex shrink-0 gap-2">
-          <button
-            type="button"
-            class="rounded bg-emerald-600/20 px-2 py-1 text-emerald-400 hover:bg-emerald-600/30"
-            @pointerdown.stop
-            @pointerup.stop
-            @click.stop="emit('done')"
-          >
-            Done
-          </button>
-          <button
-            type="button"
-            class="rounded bg-amber-600/20 px-2 py-1 text-amber-400 hover:bg-amber-600/30"
-            @pointerdown.stop
-            @pointerup.stop
-            @click.stop="emit('push')"
-          >
-            Push
-          </button>
-        </span>
-      </footer>
+        <CalendarDays class="h-6 w-6 text-amber-400/85" :stroke-width="1.5" />
+      </div>
     </div>
+
+    <article
+      ref="swipeSurfaceRef"
+      class="ui-block post-block relative z-10 overflow-hidden bg-slate-800/60 transition-colors duration-300 hover:bg-slate-800/75"
+      :class="{
+        'scale-[1.02] bg-slate-800/80 shadow-lg shadow-slate-900/50':
+          cardState === 'menu' || cardState === 'groupPicker' || cardState === 'editing',
+      }"
+      :style="articleSwipeStyle"
+      :aria-expanded="post.status === 'done' ? doneExpanded : undefined"
+      @pointerdown="onArticlePointerDown"
+      @pointermove="onArticlePointerMove"
+      @pointerup="onArticlePointerUp"
+      @pointerleave="onArticlePointerLeave"
+      @pointercancel="onArticlePointerCancel"
+    >
+      <!-- Normal view: Step 2 + Step 3 ghost (feed, unprocessed only) -->
+      <div v-if="cardState === 'normal'" :class="normalShellClass">
+        <div class="flex gap-1">
+          <button
+            v-if="enableFeedSwipe && isUnprocessedOpen"
+            type="button"
+            class="ghost-done-btn relative z-[2] mt-0.5 flex h-11 w-10 shrink-0 flex-col items-center justify-start border-0 bg-transparent p-0 text-slate-500/70 outline-none transition hover:text-slate-400 focus-visible:ring-2 focus-visible:ring-amber-500/40"
+            aria-label="Mark done"
+            @pointerdown.stop
+            @pointerup.stop
+            @click.stop="ghostMarkDone"
+          >
+            <svg
+              class="h-9 w-9 shrink-0"
+              viewBox="0 0 40 40"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M11.2 20.1c.8-2.1 2.4-4.2 4.9-5.1 2.1-.7 4.4-.4 6.2.9 1.9 1.4 3.1 3.6 3.4 5.9.2 1.8-.1 3.7-1.1 5.2-.9 1.3-2.3 2.2-3.8 2.6-1.9.5-4 .2-5.6-.9-1.8-1.2-2.9-3.2-3.2-5.3"
+                stroke="currentColor"
+                stroke-width="1.15"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                opacity="0.85"
+              />
+            </svg>
+            <span
+              class="font-['Caveat',cursive] text-[0.7rem] leading-none tracking-wide text-slate-500/80"
+            >
+              ok
+            </span>
+          </button>
+          <div class="min-w-0 flex-1">
+            <div
+              v-if="decorativeEmojis.length"
+              :class="decorativeEmojiClass"
+              aria-hidden="true"
+            >
+              <span
+                v-for="(emoji, i) in decorativeEmojis"
+                :key="`${emoji}-${i}`"
+                class="block first:mt-0"
+                :class="i > 0 ? '-mt-2.5' : ''"
+              >
+                {{ emoji }}
+              </span>
+            </div>
+            <p :class="bodyTextClass" v-html="renderedContent" />
+            <footer
+              class="relative z-[1] mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-slate-400"
+            >
+              <time :datetime="post.created_at">{{ displayTime }}</time>
+              <span
+                v-if="isPushedLater"
+                class="text-slate-600"
+                title="Processed for this week; may return next review"
+              >
+                · Later
+              </span>
+              <span
+                v-if="groupsStore.getPostGroup(post.id)"
+                class="rounded bg-slate-700/60 px-2 py-0.5 text-slate-500"
+              >
+                {{ groupsStore.getPostGroup(post.id) }}
+              </span>
+              <span
+                v-if="post.status === 'done' && doneExpanded"
+                class="rounded bg-emerald-900/50 px-2 py-0.5 text-emerald-400"
+              >
+                Done
+              </span>
+              <span v-if="showActions && !post.is_processed" class="ml-auto flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  class="rounded bg-emerald-600/20 px-2 py-1 text-emerald-400 hover:bg-emerald-600/30"
+                  @pointerdown.stop
+                  @pointerup.stop
+                  @click.stop="emit('done')"
+                >
+                  Done
+                </button>
+                <button
+                  type="button"
+                  class="rounded bg-amber-600/20 px-2 py-1 text-amber-400 hover:bg-amber-600/30"
+                  @pointerdown.stop
+                  @pointerup.stop
+                  @click.stop="emit('push')"
+                >
+                  Push
+                </button>
+              </span>
+            </footer>
+          </div>
+        </div>
+      </div>
 
     <!-- Menu view: Edit | Delete | Group -->
     <div
@@ -459,4 +591,5 @@ const decorativeEmojiClass = computed(() =>
       </div>
     </div>
   </article>
+  </div>
 </template>

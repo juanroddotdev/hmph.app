@@ -4,10 +4,14 @@ import { PenLine, ListTodo, LogOut, Settings } from 'lucide-vue-next'
 import FeedView from '@/views/FeedView.vue'
 import ReviewView from '@/views/ReviewView.vue'
 import SettingsView from '@/views/SettingsView.vue'
+import SwipeUndoToast from '@/components/SwipeUndoToast.vue'
 import { useAuthStore } from '@/stores/authStore'
+import { useShakeUndo } from '@/composables/useShakeUndo'
 
 const auth = useAuthStore()
 const activeTab = ref<'feed' | 'review' | 'settings'>('feed')
+
+useShakeUndo()
 </script>
 
 <template>
@@ -68,5 +72,7 @@ const activeTab = ref<'feed' | 'review' | 'settings'>('feed')
       <ReviewView v-show="activeTab === 'review'" />
       <SettingsView v-show="activeTab === 'settings'" />
     </main>
+
+    <SwipeUndoToast />
   </div>
 </template>

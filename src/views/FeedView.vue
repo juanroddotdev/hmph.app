@@ -214,6 +214,7 @@ onMounted(() => {
             v-for="post in todaySectionPosts"
             :key="post.id"
             :post="post"
+            enable-feed-swipe
           />
         </div>
         <div
@@ -274,7 +275,12 @@ onMounted(() => {
               :class="isDayExpanded(dayKey) ? 'max-h-[3000px]' : 'max-h-0'"
             >
               <div class="flex flex-col gap-3 pl-1 pb-2 pt-1">
-                <PostCard v-for="post in posts" :key="post.id" :post="post" />
+                <PostCard
+                  v-for="post in posts"
+                  :key="post.id"
+                  :post="post"
+                  enable-feed-swipe
+                />
               </div>
             </div>
           </div>
